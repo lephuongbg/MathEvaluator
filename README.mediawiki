@@ -1,0 +1,17 @@
+=MATHEMATICAL EXPRESSION EVALUATOR=
+
+'''This is a mathematical expression evaluator written in Qt/C++.'''
+
+* Feature:
+*# Has its own built-in arithmetic functions, which can calculate very big numbers.
+*# Uses stack-based mathematical expression parsing method (which is simple and fast).
+*# Uses strict rules to validate mathematical expressions (prevent crashes).
+*# Allow you to copy the result and also view the standardized version of the string which the program has made
+
+* Supported elements in the expression:
+*# Arithmetic operators: +, -, *, / and !
+*# Parentheses: (, ) 
+*# Numbers (of course)
+
+* Note:
+*# The program's division is integer's division. 
