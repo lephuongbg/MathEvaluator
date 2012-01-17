@@ -7,9 +7,10 @@
 *# Uses stack-based mathematical expression parsing method (which is simple and fast).
 *# Uses strict rules to validate mathematical expressions (prevent crashes).
 *# Allow you to copy the result and also view the standardized version of the string which the program has made
+*# Save history for later use
 
 * Supported elements in the expression:
-*# Arithmetic operators: +, -, *, / and !
+*# Arithmetic operators: +, -, *, /, ! and ^
 *# Parentheses: (, ) 
 *# Numbers (of course)
 
