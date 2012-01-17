@@ -105,3 +105,30 @@ big_num big_num::factorial()
         result = result * *this;
     return result;
 }
+
+/********************************************************
+ *                                                      *
+ *         OPERATOR DEFINITION: POWER OPERATOR          *
+ *                                                      *
+ ********************************************************/
+big_num big_num::operator ^(big_num op2)
+{
+    big_num result(1);
+    if (this->number == "" || op2.number == "")
+    {
+        result.number = "";
+        result.sign = 0;
+        return result;
+    }
+    if (op2.sign == -1)
+    {
+        result = 0;
+        return result;
+    }
+    while (op2.number != "0")
+    {
+        result = result * *this;
+        op2 = op2 - 1;
+    }
+    return result;
+}

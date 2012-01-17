@@ -1,10 +1,18 @@
 #ifndef EVALUATOR_H
 #define EVALUATOR_H
 
+#include <QtGui/QApplication>
 #include <QWidget>
 #include <QFutureWatcher>
+#include <QListWidget>
 #include <QProgressDialog>
-#include <QPushButton>
+#include <QPropertyAnimation>
+#include <QMenu>
+#include <QTranslator>
+#include <QWidgetAction>
+#include <QtConcurrentRun>
+#include <QFile>
+#include <QCheckBox>
 #include "big_num.h"
 #include "lex.h"
 
@@ -26,7 +34,7 @@ private slots:
 
     void on_input_returnPressed();
 
-    void on_pushButton_clicked();
+    void on_copyButton_clicked();
 
     void on_viewStdExp_toggled(bool checked);
 
@@ -34,9 +42,31 @@ private slots:
 
     void on_input_textEdited(const QString &arg1);
 
+    void move2His();
+    void move2Eval();
+
+    void readHistory();
+    bool saveHistory();
+
+    void on_historyList_itemDoubleClicked(QListWidgetItem *item);
+
+    void on_viewHisResButton_clicked();
+
+    void on_clearButton_clicked();
+
+    void on_historyButton_clicked();
+
+    void changeUI(int state);
+
 private:
     QFutureWatcher<big_num> watcher;
     QProgressDialog *evalProgress;
+    QPropertyAnimation *evalAnimation;
+    QPropertyAnimation *hisAnimation;
+    QMenu *optionMenu;
+    QTranslator translator;
+    QCheckBox *enUIbox;
+    QWidgetAction *enUItext;
 
 public:
     Ui::evaluator *ui;

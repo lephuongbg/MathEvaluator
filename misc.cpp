@@ -13,6 +13,7 @@ int precedence(char op1)
     case '(':
     case ')':
         return 1;
+    case '^':
     case '!':
         return 2;
     case '*':
@@ -48,6 +49,11 @@ void do_math(char op, stack<big_num>& number)
         n1 = number.top();number.pop();
         n2 = number.top();number.pop();
         number.push(n2/n1);
+        break;
+    case '^':
+        n1 = number.top();number.pop();
+        n2 = number.top();number.pop();
+        number.push(n2^n1);
         break;
     case '!':
         n1 = number.top();number.pop();

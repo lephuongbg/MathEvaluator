@@ -76,6 +76,12 @@ vector<lex::lex_sequence> lex::lex_analyse(const string& str)
             lexed.at(lexed.size()-1).element = op;
             i++;
             break;
+        case '^':
+            lexed.resize(lexed.size()+1);
+            lexed.at(lexed.size()-1).math_op = '^';
+            lexed.at(lexed.size()-1).element = op;
+            i++;
+            break;
         case '0':
         case '1':
         case '2':
@@ -140,14 +146,19 @@ void lex::lex_check(vector<lex_sequence> &lx)
                 {
                     if (lx.at(i-1).math_op == '-')
                     {
-                        lx.at(i-1).number.sign = -1;
-                        lx.at(i-1).number.number = "1";
-                        lx.at(i-1).element = no;
-                        lx.at(i-1).math_op = '\0';
-                        lex_sequence temp;
-                        temp.element = op;
-                        temp.math_op = '*';
-                        lx.insert(lx.begin()+i,temp);
+                        if (lx.at(i-2).math_op == '^') {
+                            lx.at(i).number.sign = -1;
+                            lx.erase(lx.begin()+i-1);
+                        } else {
+                            lx.at(i-1).number.sign = -1;
+                            lx.at(i-1).number.number = "1";
+                            lx.at(i-1).element = no;
+                            lx.at(i-1).math_op = '\0';
+                            lex_sequence temp;
+                            temp.element = op;
+                            temp.math_op = '*';
+                            lx.insert(lx.begin()+i,temp);
+                        }
                     }
                 }
         i++;
@@ -178,10 +189,10 @@ void lex::lex_standardize(vector<lex_sequence> &lx)
                 // 2)  Close paren or factorial operator beside open paren or a number
                 ((lx.at(i).math_op == ')' || lx.at(i).math_op == '!') && i + 1 < (signed)lx.size()
                     && (lx.at(i+1).math_op == '(' || lx.at(i+1).element == no)) ||
-                // 3) Minus and plus beside open paren and after another operators not parentheses
+                // 3) Minus and plus beside open paren and after another operators not parentheses or power operator
                 ((lx.at(i).math_op == '+' || lx.at(i).math_op == '-')
                     && i + 1 < (signed)lx.size() && lx.at(i+1).math_op == '('
-                    && ((i - 1 >= 0 && lx.at(i-1).element == op && lx.at(i-1).math_op > ')') || i - 1 < 0))
+                 && ((i - 1 >= 0 && lx.at(i-1).element == op && lx.at(i-1).math_op > ')' && lx.at(i-1).math_op != '^') || i - 1 < 0))
             )
         {
             //Add multiply operator
@@ -275,6 +286,16 @@ void lex::lex_validate(vector<lex_sequence> &lx)
                 if (!((i + 1 >= (signed)lx.size()) || (i + 1 < (signed)lx.size()  && lx.at(i+1).element == op && lx.at(i+1).element != '(')))
                 {    lx.resize(0); display_error(5);    }
                 break;
+            case '^':
+                //It can not be at the first position of the expression,
+                //and at its left must be a number, an open parentheses or factorial operator
+                if (!(i - 1 >= 0 && (lx.at(i-1).element == no || lx.at(i-1).math_op == ')' || lx.at(i-1).math_op == '!')))
+                {    lx.resize(0); display_error(6);     }
+                //It can not be at the last position of the expression,
+                //and at its right must be a number or a close parentheses
+                if (!(i + 1 < (signed)lx.size() && (lx.at(i+1).element == no || lx.at(i+1).math_op == '(')))
+                {    lx.resize(0); display_error(6);     }
+                break;
             default:
                 break;
             };
@@ -328,7 +349,10 @@ big_num lex::evaluate()
             case '*':
             case '/':
             case '!':
+            case '^':
                 while (op_stack.size() > 0 && op_stack.top() != '(' && (precedence(op_stack.top()) <= precedence(lx.at(i).math_op)) ) {
+                    if ((lx.at(i).math_op == '!' || lx.at(i).math_op == '^') && op_stack.top() == '^')
+                        break;
                     do_math(op_stack.top(),no_stack);
                     op_stack.pop();
                 }
@@ -377,32 +401,32 @@ big_num lex::evaluate()
  ********************************************************/
 void lex::display_error(int error_code)
 {
-    QString info = tr("<span style='font-weight:bold;color:red;'>");
+    QString info = "<span style='font-weight:bold;color:red;'>";
     switch (error_code)
     {
     case 1:
-        info.append(tr("Unbalanced parentheses!!!</span>"));
-        emit error(info);
+        info.append(tr("Unbalanced parentheses!!!"));
         break;
     case 2:
-        info.append(tr("Error beside a number!!!</span>"));
-        emit error(info);
+        info.append(tr("Error beside a number!!!"));
         break;
     case 3:
-        info.append(tr("Error beside an operator!!!</span>"));
-        emit error(info);
+        info.append(tr("Error beside an operator!!!"));
         break;
     case 4:
-        info.append(tr("Error beside an open parentheses!!!</span>"));
-        emit error(info);
+        info.append(tr("Error beside an open parentheses!!!"));
         break;
     case 5:
-        info.append(tr("Error beside a close parantheses!!!</span>"));
-        emit error(info);
+        info.append(tr("Error beside a close parantheses!!!"));
+        break;
+    case 6:
+        info.append(tr("Error beside a power operator"));
         break;
     default:
         break;
     }
+    info.append("</span>");
+    emit error(info);
 }
 
 /***************************************************

@@ -49,14 +49,24 @@ big_num big_num::operator+(big_num op2)
     /*Carry the digits left in the other operand to the result*/
     while (index1 >= 0)
     {
-        result.number.insert(0,1,D2C(C2D(number.at(index1)+carry)));
-        carry = 0;
+        if (C2D(number.at(index1))+carry >= 10) {
+            result.number.insert(0,1,D2C((C2D(number.at(index1))+carry)%10));
+            carry = 1;
+        } else {
+            result.number.insert(0,1,D2C(C2D(number.at(index1)+carry)));
+            carry = 0;
+        }
         index1--;
     }
     while (index2 >= 0)
     {
-        result.number.insert(0,1,D2C(C2D(op2.number.at(index2)+carry)));
-        carry = 0;
+        if (C2D(op2.number.at(index2))+carry >= 10) {
+            result.number.insert(0,1,D2C((C2D(op2.number.at(index2))+carry)%10));
+            carry = 1;
+        } else {
+            result.number.insert(0,1,D2C(C2D(op2.number.at(index2)+carry)));
+            carry = 0;
+        }
         index2--;
     }
     //Last check the carry var

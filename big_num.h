@@ -23,7 +23,8 @@ public:
     big_num(int n);
     big_num(string &str);
 
-    //Overloading operators
+    //Overloading operators:
+    //(these operators are in separate source files)
     big_num operator=(big_num op2);
     big_num operator+(big_num op2);
     big_num operator+(int op2);
@@ -31,6 +32,9 @@ public:
     big_num operator*(big_num op2);
     big_num operator*(int op2);
     big_num operator/(big_num op2);
+
+    //(these operators are in the class source file)
+    big_num operator^(big_num op2);
 
     //Factorial
     big_num factorial();

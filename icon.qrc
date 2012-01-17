@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/">
         <file>Tutorial.ico</file>
+        <file>cog.png</file>
     </qresource>
 </RCC>

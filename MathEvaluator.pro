@@ -29,7 +29,7 @@ FORMS    += evaluator.ui
 RESOURCES += \
     icon.qrc
 
-TRANSLATIONS = MathEvaluator_vi.ts
+TRANSLATIONS = ME_vi.ts
 
 CODECFORTR = UTF-8
 
