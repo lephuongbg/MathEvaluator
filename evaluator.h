@@ -56,16 +56,23 @@ private slots:
 
     void on_historyButton_clicked();
 
+    void disable_on_calculating();
+    void enable_after_calculating();
+
     void changeUI(int state);
 
 private:
-    QFutureWatcher<big_num> watcher;
-    QProgressDialog *evalProgress;
+    QFutureWatcher<void> watcher;
+
     QPropertyAnimation *evalAnimation;
     QPropertyAnimation *hisAnimation;
+
     QMenu *optionMenu;
+
     QTranslator translator;
+
     QCheckBox *enUIbox;
+
     QWidgetAction *enUItext;
 
 public:

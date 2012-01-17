@@ -15,15 +15,18 @@ evaluator::evaluator(QWidget *parent) :
 
     lx = new lex;
 
-    //Loading dialog box
-    evalProgress = new QProgressDialog(this, Qt::WindowTitleHint);
-    evalProgress->setWindowIcon(QIcon(":/Tutorial.ico"));
-    evalProgress->setLabelText(tr("Calculating..."));
-    evalProgress->setMinimum(0);
-    evalProgress->setMaximum(0);
-    evalProgress->setCancelButton(0);
-    evalProgress->setFixedSize(evalProgress->size());
-    connect(&watcher, SIGNAL(finished()), evalProgress, SLOT(close()));
+    //Calculating progress bar
+    ui->evalProgressBar->hide();
+    ui->evalProgressBar->setMinimum(0);
+    ui->evalProgressBar->setMaximum(0);
+    connect(&watcher,SIGNAL(finished()),ui->evalProgressBar,SLOT(hide()));
+
+    //Disable some elements upon calculating
+    connect(&watcher,SIGNAL(started()),this,SLOT(disable_on_calculating()));
+
+    //Reenable some elements after done calculating
+    connect(&watcher,SIGNAL(finished()),this,SLOT(enable_after_calculating()));
+    connect(lx,SIGNAL(success()),this,SLOT(enable_viewStdExp()));
 
     //Animation
     evalAnimation = new QPropertyAnimation(ui->evalWidget,"geometry");
@@ -31,6 +34,13 @@ evaluator::evaluator(QWidget *parent) :
 
     //Read history when start
     readHistory();
+
+    //Connect evaluation class info to the program
+    connect(lx,SIGNAL(error(QString)),ui->output,SLOT(setText(QString)));
+    connect(lx,SIGNAL(result_str(QString)),ui->output,SLOT(setText(QString)));
+
+    //Save successfully evaluated expression
+    connect(lx,SIGNAL(success()),this,SLOT(saveHistory()));
 
     //Add option menu
     optionMenu = new QMenu;
@@ -46,55 +56,30 @@ evaluator::~evaluator()
 {
     delete ui;
     delete lx;
-    delete evalProgress;
     delete evalAnimation;
     delete hisAnimation;
     delete optionMenu;
 }
+
+/********************************************
+ *         ACTIVATING ELEMENTS              *
+ ********************************************/
 
 void evaluator::on_evaluateButton_clicked()
 {
     QString expression = ui->input->text();
     if (expression == "")
         return;
-    //Connect error info to output
-    connect(lx,SIGNAL(error(QString)),ui->output,SLOT(setText(QString)));
 
     //Put the expression into evaluation class
     lx->set(expression.toStdString());
 
-    //Move evaluating process to another thread
-    QFuture<big_num> future = QtConcurrent::run(lx, &lex::evaluate);
+    //Excute evaluation process in another thread
+    QFuture<void> future = QtConcurrent::run(lx, &lex::excute);
     watcher.setFuture(future);
 
-    //Show progress for long operation
-    evalProgress->exec();
-
-    //Get the result
-    big_num result = future.result();
-
-    //Display the result
-    if (!(result.sign == 0))
-    {
-        QString out = QString::fromStdString(result.number);
-        if (result.sign == -1)
-            out.insert(0,'-');
-        ui->output->setPlainText(out);
-
-        //Enable view standard expression after done calculation
-        ui->viewStdExp->setEnabled(true);
-        if (ui->viewStdExp->isChecked())
-            ui->input->setText(lx->standardized());
-
-        //Save the successfully evaluated expression then reload
-        if (saveHistory())
-            readHistory();
-    } else {
-        //Add more error info
-        QString currentText = ui->output->toHtml();
-        currentText.append(tr("<span style='color:red'><b>Calculation error!!!<b></span>"));
-        ui->output->setText(currentText);
-    }
+    //Show progress
+    ui->evalProgressBar->show();
 }
 
 void evaluator::on_input_returnPressed()
@@ -117,16 +102,46 @@ void evaluator::on_viewStdExp_toggled(bool checked)
         ui->input->setText(QString::fromStdString(lx->input));
 }
 
-void evaluator::enable_viewStdExp()
-{
-    ui->viewStdExp->setEnabled(true);
-}
-
 void evaluator::on_input_textEdited(const QString &arg1)
 {
     Q_UNUSED(arg1);
     ui->viewStdExp->setDisabled(true);
 }
+
+void evaluator::on_historyList_itemDoubleClicked(QListWidgetItem *item)
+{
+    ui->input->setText(item->text());
+    on_evaluateButton_clicked();
+    move2Eval();
+}
+
+void evaluator::on_viewHisResButton_clicked()
+{
+    ui->input->setText(ui->historyList->currentItem()->text());
+    on_evaluateButton_clicked();
+}
+
+void evaluator::on_clearButton_clicked()
+{
+    QFile file("history");
+    file.resize(0);
+    readHistory();
+}
+
+void evaluator::on_historyButton_clicked()
+{
+    if (lx->standardized() == "")
+        ui->historyList->setCurrentRow(0);
+    else
+    {
+        QList<QListWidgetItem*> list = ui->historyList->findItems(lx->standardized(), Qt::MatchExactly);
+        ui->historyList->setCurrentItem(list.at(0));
+    }
+}
+
+/********************************************
+ *               ANIMATION                  *
+ ********************************************/
 
 void evaluator::move2His()
 {
@@ -157,6 +172,10 @@ void evaluator::move2Eval()
     evalAnimation->setEndValue(QRect(0,0,451,352));
     evalAnimation->start();
 }
+
+/********************************************
+ *             READ/SAVE HISTORY            *
+ ********************************************/
 
 void evaluator::readHistory()
 {
@@ -191,54 +210,51 @@ bool evaluator::saveHistory()
             stream << lx->standardized() << '\n';
             stream.flush();
             file.close();
+            readHistory();
             return 1;
         }
     }
     return 0;
 }
 
-void evaluator::on_historyList_itemDoubleClicked(QListWidgetItem *item)
+/********************************************
+ *          ENABLE/DISABLE ELEMENTS         *
+ ********************************************/
+void evaluator::enable_after_calculating()
 {
-    ui->input->setText(item->text());
-    on_evaluateButton_clicked();
-    move2Eval();
+    ui->viewHisResButton->setEnabled(true);
+    ui->output->setEnabled(true);
+    ui->evaluateButton->setEnabled(true);
+    ui->copyButton->setEnabled(true);
 }
 
-void evaluator::on_viewHisResButton_clicked()
+void evaluator::disable_on_calculating()
 {
-    ui->input->setText(ui->historyList->currentItem()->text());
-    on_evaluateButton_clicked();
+    ui->viewHisResButton->setDisabled(true);
+    ui->output->setDisabled(true);
+    ui->evaluateButton->setDisabled(true);
+    ui->copyButton->setDisabled(true);
 }
 
-void evaluator::on_clearButton_clicked()
+
+void evaluator::enable_viewStdExp()
 {
-    QFile file("history");
-    file.resize(0);
-    readHistory();
+    ui->viewStdExp->setEnabled(true);
 }
 
-void evaluator::on_historyButton_clicked()
-{
-    if (lx->standardized() == "")
-        ui->historyList->setCurrentRow(0);
-    else
-    {
-        QList<QListWidgetItem*> list = ui->historyList->findItems(lx->standardized(), Qt::MatchExactly);
-        ui->historyList->setCurrentItem(list.at(0));
-    }
-}
+/********************************************
+ *          CHANGE INTERFACE                *
+ ********************************************/
 
 void evaluator::changeUI(int state)
 {
     if (state == Qt::Checked)
     {
         QCoreApplication::removeTranslator(&translator);
-        evalProgress->setLabelText(tr("Calculating..."));
         enUIbox->setText(tr("English interface"));
         ui->retranslateUi(this);
     } else {
         QCoreApplication::installTranslator(&translator);
-        evalProgress->setLabelText(tr("Calculating..."));
         enUIbox->setText(tr("English interface"));
         ui->retranslateUi(this);
     }

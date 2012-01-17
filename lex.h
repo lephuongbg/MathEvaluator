@@ -16,6 +16,8 @@ private:
     };
     vector<lex_sequence> lexed_result;
     vector<lex_sequence> lex_analyse(const string& str);
+    big_num result;
+
     void lex_validate(vector<lex_sequence> &lx);
     void lex_standardize(vector<lex_sequence> &lx);
     void lex_check(vector<lex_sequence> &lx);
@@ -24,10 +26,15 @@ public:
     lex();
     string input;
     void set(const string& str);
-    big_num evaluate();
+    void evaluate();
     QString standardized();
+    QString standardized(vector<lex_sequence> result);
+
+    void excute();
 signals:
     void error(QString);
+    void result_str(QString);
+    void success();
 };
 
 #endif // LEX_H

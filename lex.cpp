@@ -313,15 +313,14 @@ void lex::lex_validate(vector<lex_sequence> &lx)
  * PARAMETER: a mathematical expression in string form	*
  * RETURN: the math result								*
  ********************************************************/
-big_num lex::evaluate()
+void lex::evaluate()
 {
-    big_num result;
     vector<lex_sequence> lx = lexed_result;	//Break string into tokens, check and standardize them
     //Error handling
     if (lx.size() == 0)
     {
         result.sign = 0;
-        return result;
+        return;
     }
     stack<big_num> no_stack;		//Number stack
     stack<char> op_stack;			//Operator stack
@@ -393,7 +392,6 @@ big_num lex::evaluate()
     //The result is the only number left in number stack
     result = no_stack.top();
     no_stack.pop();
-    return result;
 }
 
 /********************************************************
@@ -451,4 +449,23 @@ QString lex::standardized()
         output.append(' ');
     }
     return output;
+}
+
+/***************************************************
+ * FUNCTION: execute()                             *
+ *          - excute necessary steps               *
+ ***************************************************/
+void lex::excute()
+{
+    evaluate();
+    if (!(result.sign == 0))
+    {
+        QString out = QString::fromStdString(result.number);
+        if (result.sign == -1)
+            out.insert(0,'-');
+        emit result_str(out);
+
+        //Enable view standard expression after done calculation
+        emit success();
+    }
 }
