@@ -2,5 +2,8 @@
     <qresource prefix="/">
         <file>Tutorial.ico</file>
         <file>cog.png</file>
+        <file>history.png</file>
+        <file>configure.png</file>
+        <file>quit.png</file>
     </qresource>
 </RCC>

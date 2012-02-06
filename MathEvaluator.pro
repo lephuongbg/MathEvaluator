@@ -18,13 +18,16 @@ SOURCES += main.cpp\
     odivide.cpp \
     big_num.cpp \
     misc.cpp \
-    lex.cpp
+    lex.cpp \
+    aboutdialog.cpp
 
 HEADERS  += evaluator.h \
     big_num.h \
-    lex.h
+    lex.h \
+    aboutdialog.h
 
-FORMS    += evaluator.ui
+FORMS    += evaluator.ui \
+    aboutdialog.ui
 
 RESOURCES += \
     icon.qrc
@@ -32,5 +35,3 @@ RESOURCES += \
 TRANSLATIONS = ME_vi.ts
 
 CODECFORTR = UTF-8
-
-CODECFORSRC = UTF-8

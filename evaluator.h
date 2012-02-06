@@ -13,8 +13,10 @@
 #include <QtConcurrentRun>
 #include <QFile>
 #include <QCheckBox>
+#include <QTimer>
 #include "big_num.h"
 #include "lex.h"
+#include "aboutdialog.h"
 
 
 namespace Ui {
@@ -42,9 +44,6 @@ private slots:
 
     void on_input_textEdited(const QString &arg1);
 
-    void move2His();
-    void move2Eval();
-
     void readHistory();
     bool saveHistory();
 
@@ -54,12 +53,17 @@ private slots:
 
     void on_clearButton_clicked();
 
-    void on_historyButton_clicked();
-
     void disable_on_calculating();
     void enable_after_calculating();
 
-    void changeUI(int state);
+    void on_uiBox_toggled(bool checked);
+
+    void on_listWidget_currentRowChanged(int currentRow);
+
+    void on_aboutButton_clicked();
+
+    void changeWgtPage(int page);
+    void nextWgtPage();
 
 private:
     QFutureWatcher<void> watcher;
@@ -67,17 +71,12 @@ private:
     QPropertyAnimation *evalAnimation;
     QPropertyAnimation *hisAnimation;
 
-    QMenu *optionMenu;
-
     QTranslator translator;
-
-    QCheckBox *enUIbox;
-
-    QWidgetAction *enUItext;
 
 public:
     Ui::evaluator *ui;
     lex *lx;
+    aboutDialog *aD;
 };
 
 //Misc

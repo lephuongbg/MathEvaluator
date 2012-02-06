@@ -28,10 +28,6 @@ evaluator::evaluator(QWidget *parent) :
     connect(&watcher,SIGNAL(finished()),this,SLOT(enable_after_calculating()));
     connect(lx,SIGNAL(success()),this,SLOT(enable_viewStdExp()));
 
-    //Animation
-    evalAnimation = new QPropertyAnimation(ui->evalWidget,"geometry");
-    hisAnimation = new QPropertyAnimation(ui->historyWidget,"geometry");
-
     //Read history when start
     readHistory();
 
@@ -42,23 +38,17 @@ evaluator::evaluator(QWidget *parent) :
     //Save successfully evaluated expression
     connect(lx,SIGNAL(success()),this,SLOT(saveHistory()));
 
-    //Add option menu
-    optionMenu = new QMenu;
-    enUIbox = new QCheckBox(tr("English interface"),optionMenu);
-    enUItext = new QWidgetAction(optionMenu);
-    enUItext->setDefaultWidget(enUIbox);
-    optionMenu->addAction(enUItext);
-    connect(enUIbox,SIGNAL(stateChanged(int)),this,SLOT(changeUI(int)));
-    ui->optionButton->setMenu(optionMenu);
+    //About Dialog
+    aD = new aboutDialog(this);
+    aD->setFixedSize(aD->size());
+
+    connect(ui->listWidget, SIGNAL(currentRowChanged(int)), this, SLOT(changeWgtPage(int)));
 }
 
 evaluator::~evaluator()
 {
     delete ui;
     delete lx;
-    delete evalAnimation;
-    delete hisAnimation;
-    delete optionMenu;
 }
 
 /********************************************
@@ -112,13 +102,14 @@ void evaluator::on_historyList_itemDoubleClicked(QListWidgetItem *item)
 {
     ui->input->setText(item->text());
     on_evaluateButton_clicked();
-    move2Eval();
+    ui->listWidget->setCurrentRow(0);
 }
 
 void evaluator::on_viewHisResButton_clicked()
 {
     ui->input->setText(ui->historyList->currentItem()->text());
     on_evaluateButton_clicked();
+    ui->listWidget->setCurrentRow(0);
 }
 
 void evaluator::on_clearButton_clicked()
@@ -128,50 +119,67 @@ void evaluator::on_clearButton_clicked()
     readHistory();
 }
 
-void evaluator::on_historyButton_clicked()
+void evaluator::on_listWidget_currentRowChanged(int currentRow)
 {
-    if (lx->standardized() == "")
-        ui->historyList->setCurrentRow(0);
-    else
+    switch (currentRow)
     {
-        QList<QListWidgetItem*> list = ui->historyList->findItems(lx->standardized(), Qt::MatchExactly);
-        ui->historyList->setCurrentItem(list.at(0));
+    case 1:     //historyPage
+        if (lx->standardized() == "")
+            ui->historyList->setCurrentRow(0);
+        else
+        {
+            QList<QListWidgetItem*> list = ui->historyList->findItems(lx->standardized(), Qt::MatchExactly);
+            ui->historyList->setCurrentItem(list.at(0));
+        }
+        break;
+    default:
+        break;
     }
 }
 
-/********************************************
- *               ANIMATION                  *
- ********************************************/
-
-void evaluator::move2His()
+void evaluator::on_aboutButton_clicked()
 {
-    //Set up animation for history widget
-    hisAnimation->setDuration(200);
-    hisAnimation->setStartValue(QRect(451,0,451,352));
-    hisAnimation->setEndValue(QRect(0,0,451,352));
-    hisAnimation->start();
-
-    //Setup animation for evaluation widget
-    evalAnimation->setDuration(200);
-    evalAnimation->setStartValue(QRect(0,0,451,352));
-    evalAnimation->setEndValue(QRect(-451,0,451,352));
-    evalAnimation->start();
+    aD->show();
 }
 
-void evaluator::move2Eval()
+void evaluator::changeWgtPage(int page)
 {
-    //Set up animation for history widget
-    hisAnimation->setDuration(200);
-    hisAnimation->setStartValue(QRect(0,0,451,352));
-    hisAnimation->setEndValue(QRect(451,0,451,352));
-    hisAnimation->start();
+    Q_UNUSED(page);
+    if (!ui->disableAniBox->isChecked())
+    {
+        QWidget *thePage = ui->stackedWidget->currentWidget();
+        QPropertyAnimation *slideout = new QPropertyAnimation(thePage, "geometry", this);
+        connect(slideout, SIGNAL(finished()), this, SLOT(nextWgtPage()));
 
-    //Setup animation for evaluation widget
-    evalAnimation->setDuration(200);
-    evalAnimation->setStartValue(QRect(-451,0,451,352));
-    evalAnimation->setEndValue(QRect(0,0,451,352));
-    evalAnimation->start();
+        slideout->setStartValue(thePage->geometry());
+        if (page > ui->stackedWidget->currentIndex()) {
+            slideout->setEndValue(QRect(thePage->x(), this->height()*-1, thePage->width(), thePage->height())); //slide up
+        } else {
+            slideout->setEndValue(QRect(thePage->x(), this->height(), thePage->width(), thePage->height())); //slide down
+        }
+        slideout->setDuration(250);
+        slideout->start();
+    } else {
+        ui->stackedWidget->setCurrentIndex(ui->listWidget->currentRow());
+    }
 }
+
+void evaluator::nextWgtPage()
+{
+    int oldIndex = ui->stackedWidget->currentIndex();
+    ui->stackedWidget->setCurrentIndex(ui->listWidget->currentRow());
+    QWidget *thePage = ui->stackedWidget->currentWidget();
+    QPropertyAnimation *slidein = new QPropertyAnimation(thePage, "geometry", this);
+    if (oldIndex < ui->stackedWidget->currentIndex()) {
+        slidein->setStartValue(QRect(thePage->x(), this->height(), thePage->width(), thePage->height()));
+    } else {
+        slidein->setStartValue(QRect(thePage->x(), this->height()*(-1), thePage->width(), thePage->height()));
+    }
+    slidein->setEndValue(thePage->geometry());
+    slidein->setDuration(250);
+    slidein->start();
+}
+
 
 /********************************************
  *             READ/SAVE HISTORY            *
@@ -246,16 +254,13 @@ void evaluator::enable_viewStdExp()
  *          CHANGE INTERFACE                *
  ********************************************/
 
-void evaluator::changeUI(int state)
+void evaluator::on_uiBox_toggled(bool checked)
 {
-    if (state == Qt::Checked)
+    if (checked)
     {
         QCoreApplication::removeTranslator(&translator);
-        enUIbox->setText(tr("English interface"));
-        ui->retranslateUi(this);
     } else {
         QCoreApplication::installTranslator(&translator);
-        enUIbox->setText(tr("English interface"));
-        ui->retranslateUi(this);
     }
+    ui->retranslateUi(this);
 }
